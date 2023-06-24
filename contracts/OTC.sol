@@ -1,4 +1,4 @@
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.18;
 
 contract OTC {
     struct Deal {
@@ -19,10 +19,15 @@ contract OTC {
     }
 
     Deal[] public deals;
+    address public admin;
 
+    constructor() {
+        admin = msg.sender;
+    }
+    
     function postOffer(string memory _dealType, string memory _opportunityName, uint256 _expiryBlock, uint256 _sellerDeposit) external payable{
         Deal memory newDeal;
-        require(msg.value >= _sellerDeposit);
+        require(msg.value >= _sellerDeposit,"Not enough eth deposited");
         newDeal.dealType = _dealType;
         newDeal.opportunityName = _opportunityName;
         newDeal.seller = msg.sender;
