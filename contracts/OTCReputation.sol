@@ -18,7 +18,7 @@ contract OTCReputation {
     event counterPartyMatched(string proposalMsg,   address initiator, address counterParty, address attestor, string status,uint deadlineBlock, uint proposalIndex);
     event attestorMatched(string proposalMsg,   address initiator, address counterParty, address attestor, string status,uint deadlineBlock, uint proposalIndex);
     event proposalExecuted(string proposalMsg,   address initiator, address counterParty, address attestor, string status,uint deadlineBlock, uint proposalIndex);
-    event proposalExepired(string proposalMsg,   address initiator, address counterParty, address attestor, string status,uint deadlineBlock, uint proposalIndex);
+    event proposalExpired(string proposalMsg,   address initiator, address counterParty, address attestor, string status,uint deadlineBlock, uint proposalIndex);
 
     constructor() {
         admin = msg.sender;
@@ -47,4 +47,26 @@ contract OTCReputation {
         emit counterPartyMatched(proposals[_proposalIndex].proposalMsg,proposals[_proposalIndex].initiator, proposals[_proposalIndex].couterParty, proposals[_proposalIndex].attestor,  proposals[_proposalIndex].status, proposals[_proposalIndex].deadlineBlock, _proposalIndex);
     }
 
+    function attestProposal(uint _proposalIndex) public {
+
+        proposals[_proposalIndex].status = "executable";
+        proposals[_proposalIndex].attestor = msg.sender;
+
+        emit counterPartyMatched(proposals[_proposalIndex].proposalMsg,proposals[_proposalIndex].initiator, proposals[_proposalIndex].couterParty, proposals[_proposalIndex].attestor,  proposals[_proposalIndex].status, proposals[_proposalIndex].deadlineBlock, _proposalIndex);
+    }
+    function executeProposal(uint _proposalIndex) public {
+        require(proposals[_proposalIndex].attestor == msg.sender,'only attestor');
+    if (block.number > proposals[_proposalIndex].deadlineBlock ){
+        proposals[_proposalIndex].status = "executed";
+
+        emit proposalExecuted(proposals[_proposalIndex].proposalMsg,proposals[_proposalIndex].initiator, proposals[_proposalIndex].couterParty, proposals[_proposalIndex].attestor,  proposals[_proposalIndex].status, proposals[_proposalIndex].deadlineBlock, _proposalIndex);
+    }
+
+    else{
+        proposals[_proposalIndex].status = "expired";
+
+        emit proposalExpired(proposals[_proposalIndex].proposalMsg,proposals[_proposalIndex].initiator, proposals[_proposalIndex].couterParty, proposals[_proposalIndex].attestor,  proposals[_proposalIndex].status, proposals[_proposalIndex].deadlineBlock, _proposalIndex);
+
+     }
+    }
 }
