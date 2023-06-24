@@ -8,12 +8,8 @@ const hre = require("hardhat");
 
 async function main() {
 
-
-
   const OTC = await hre.ethers.getContractFactory("OTC");
   const otc = await OTC.deploy();
-
-  await otc.deployed();
 
   console.log(
     `
