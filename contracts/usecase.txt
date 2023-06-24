@@ -7,7 +7,8 @@ for two reasons: 1. affected users are all around the world and in different
 juristiction, which has different rules on trading bankruptcy claims and 
 2. a lot of affected users are individuals with small ticket size, and it 
 can only scale with a trustless and permissionless platform, instead of
-the costly and time-consuming traditional means.
+the costly and time-consuming traditional means of reassigning the creditor to 
+the claims buyer.
 
 The challenge then becomes, since the claims cannot be transferred easily,
 it relies on Alice delivering the claims to Bob, when the claims become claimable.
