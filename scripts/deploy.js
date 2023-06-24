@@ -13,7 +13,7 @@ async function main() {
 
   console.log(
     `
-    Deployed to https://explorer.public.zkevm-test.net/address/${otc.address}`
+    Deployed to testnet`
   );
 }
 

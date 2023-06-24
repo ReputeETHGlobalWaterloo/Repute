@@ -10,5 +10,9 @@ module.exports = {
       url: `https://fittest-summer-telescope.zkevm-testnet.discover.quiknode.pro/0b10f4003d89e91d8b3dc9c4226999b16a17f072/`,
       accounts: [`0x${ZKEVM_PRIVATE_KEY}`],
     },
+    Mumbai: {
+      url: `https://polygon-mumbai.infura.io/v3/3e180d8cd3dd415487cc23deb269e726`,
+      accounts: [`0x${ZKEVM_PRIVATE_KEY}`],
+    },
   }
 };

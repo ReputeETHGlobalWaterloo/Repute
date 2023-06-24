@@ -1,11 +1,6 @@
 pragma solidity ^0.8.18;
 
-import { ByteHasher } from "./helpers/ByteHasher.sol";
-import { IWorldID } from "./interfaces/IWorldID.sol";
-
-
 contract OTC {
-    using ByteHasher for bytes;
     struct Deal {
         string dealType; // bankruptcy claims, saft, safe, vesting tokens, airdrop
         string opportunityName; // i.e. FTX claim, MonkeySwap SAFT
@@ -28,18 +23,6 @@ contract OTC {
 
     Deal[] public deals;
     address public admin;
-    mapping(address => bool) public worldIDVerified; // Maps an address to a boolean indicating if the world ID is verified
-    /// @dev The World ID instance that will be used for verifying proofs
-    IWorldID internal immutable worldId;
-
-    /// @dev The World ID group ID (always `1`)
-    uint256 internal immutable groupId;
-
-    /// @dev The World ID Action ID
-    uint256 internal immutable actionId;
-
-    /// @dev Connection between nullifiers and address. Used to correctly unverify the past profile when re-verifying.
-    mapping(uint256 => address) internal nullifierHashes;
 
     event OfferPosted(uint256 indexed dealId, string dealType, string opportunityName, address indexed seller, uint256 sellerDeposit, uint256 expiryBlock);
     event OfferTaken(uint256 indexed dealId, address indexed buyer, uint256 buyerDeposit);
@@ -47,64 +30,11 @@ contract OTC {
     event AttestorSwapped(uint256 indexed dealId, address indexed newAttestor);
     event ExpiryExtended(uint256 indexed dealId, uint256 newExpiry);
     event Refunded(uint256 indexed dealId, address indexed seller, address indexed buyer, uint256 sellerDeposit, uint256 buyerDeposit);
-    event IDVerified(address indexed user); // Event emitted when worldIDVerify is executed and an address is verified
-    event IDUnverified(address indexed user); // Event emitted when worldIDVerify is executed and an address is unverified
-    //for example, a world coin user can update the verified address later, which will first unverify previous address and then verify current address
 
-    // @notice Sets the worldcoin verification router address and some configs
-    /// @param _worldId The WorldID instance that will verify the proofs
-    /// @param _groupId The WorldID group that contains our users (always `1`)
-    /// @param _actionId The WorldID Action ID for the proofs
-    
-    constructor(IWorldID _worldId,
-        uint256 _groupId,
-        string memory _actionId) {
-        worldId = _worldId;
-        groupId = _groupId;
-        actionId = abi.encodePacked(_actionId).hashToField();
+    constructor() {
         admin = msg.sender;
     }
     
-    function worldIDVerify() external {
-
-
-        worldIDVerified[msg.sender] = true;
-        emit IDVerified(msg.sender);
-    }
-
-    /// @notice Verify an ETH address profile
-    /// @param userAddress The address profile you want to verify
-    /// @param root The root of the Merkle tree (returned by the JS SDK).
-    /// @param nullifierHash The nullifier hash for this proof, preventing double signaling (returned by the JS widget).
-    /// @param proof The zero-knowledge proof that demostrates the claimer is registered with World ID (returned by the JS widget).
-    function verify(
-        address userAddress,
-        uint256 root,
-        uint256 nullifierHash,
-        uint256[8] calldata proof
-    ) public payable {
-        worldId.verifyProof(
-            root,
-            groupId,
-            abi.encodePacked(userAddress).hashToField(),
-            nullifierHash,
-            actionId,
-            proof
-        );
-
-        if (nullifierHashes[nullifierHash] != address(0)) {
-            address prevUserAddress= nullifierHashes[nullifierHash];
-
-            worldIDVerified[prevUserAddress] = false;
-            emit IDVerified(prevUserAddress);
-        }
-
-        worldIDVerified[userAddress] = true;
-        nullifierHashes[nullifierHash] = userAddress;
-
-        emit IDUnverified(userAddress);
-    }
-
     function postOffer(string memory _dealType, string memory _opportunityName, uint256 _expiryBlock, uint256 _sellerDeposit, uint256 _buyerDeposit) external payable{
         Deal memory newDeal;
         require(msg.value >= _sellerDeposit,"Not enough eth deposited from seller");
