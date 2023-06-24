@@ -31,5 +31,9 @@ However, this setup means both Alice and Bob need to trust the third party. Sinc
 bankruptcy case can go-on for multiple years, it requires a lot of trust on the third party.
 Thus we are building a decentralized platform that can facilitate this type of OTC deal.
 
+As Alice and Bob are trading an off-chain asset (the claims) with an on-chain asset (Bob's payment),
+we require attestor to oversee that Alice has actually delivered the claims to Bob, before
+the smart contract can release the funds.
+
 The OTC deal does not only include the trading of bankruptcy claims. It could also expand to
 trading airdrop farming addresses, where the airdrop token is not yet claimable.
