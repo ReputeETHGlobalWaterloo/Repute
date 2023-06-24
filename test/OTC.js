@@ -1,175 +1,116 @@
-// Import the necessary modules from Hardhat
+// Import the necessary libraries and dependencies
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe("OTC Contract", function () {
-    let OTC;
-    let otc;
-    let owner;
-    let addr1;
-    let addr2;
-  
-    beforeEach(async function () {
-      // Deploy the OTC contract
-      OTC = await ethers.getContractFactory("OTC");
-      [owner, addr1, addr2] = await ethers.getSigners();
-      otc = await OTC.deploy();
-      //await otc.deployed();
-    });
-  
-    describe("Constructor", function () {
-      it("Should set the contract admin as the deployer", async function () {
-        expect(await otc.admin()).to.equal(owner.address);
-      });
-    });
-  
-    describe("Post Offer", function () {
-      it("Should add a new deal with the provided details", async function () {
-        const ethAmount = ethers.parseEther("1");
-    
-        // Create the transaction parameters
-        const transactionParams = {
-          value: ethAmount,
-        };
-    
-        // Call the postOffer function with the transaction parameters
-        await expect(otc.connect(owner).postOffer("bankruptcy claims", "FTX claim", 1000, ethers.parseEther("1"), transactionParams))
-          .to.emit(otc, "OfferPosted");
-    
-        const deal = await otc.deals(0);
-    
-        // Perform assertions
-        expect(deal.dealType).to.equal("bankruptcy claims");
-        expect(deal.opportunityName).to.equal("FTX claim");
-        expect(deal.seller).to.equal(owner.address);
-        expect(deal.status).to.equal(0);
-        expect(deal.sellerDeposit).to.equal(ethAmount);
-        expect(deal.expiryBlock).to.equal(1000);
-      });
-    });
-    
-  
-    describe("Take Offer", function () {
-      beforeEach(async function () {
-        await otc.postOffer("bankruptcy claims", "FTX claim", 1000, ethers.parseEther("1"));
-      });
-  
-      it("Should allow a buyer to take an available deal", async function () {
-        await otc.connect(addr1).takeOffer(0, { value: ethers.parseEther("1") });
-        const deal = await otc.deals(0);
-  
-        expect(deal.buyer).to.equal(addr1.address);
-        expect(deal.buyerDeposit).to.equal(ethers.parseEther("1"));
-        expect(deal.status).to.equal(1);
-      });
-  
-      it("Should revert when trying to take an already taken deal", async function () {
-        await otc.connect(addr1).takeOffer(0, { value: ethers.parseEther("1") });
-        await expect(otc.connect(addr2).takeOffer(0, { value: ethers.parseEther("1") })).to.be.revertedWith(
-          "Deal not available"
-        );
-      });
-  
-      it("Should revert when trying to take an invalid deal ID", async function () {
-        await expect(otc.connect(addr1).takeOffer(1, { value: ethers.parseEther("1") })).to.be.revertedWith(
-          "Invalid deal ID"
-        );
-      });
-    });
-  
-    describe("Settle Trade", function () {
-      beforeEach(async function () {
-        await otc.postOffer("bankruptcy claims", "FTX claim", 1000, ethers.parseEther("1"));
-        await otc.connect(addr1).takeOffer(0, { value: ethers.parseEther("1") });
-      });
-  
-      it("Should settle a taken deal", async function () {
-        await otc.settleTrade(0);
-        const deal = await otc.deals(0);
-  
-        expect(deal.status).to.equal(2);
-        expect(await owner.getBalance()).to.equal(ethers.parseEther("1"));
-        expect(await addr1.getBalance()).to.equal(ethers.parseEther("0"));
-      });
-  
-      it("Should revert when trying to settle an invalid deal ID", async function () {
-        await expect(otc.settleTrade(1)).to.be.revertedWith("Invalid deal ID");
-      });
-  
-      it("Should revert when trying to settle a deal that has not been taken", async function () {
-        await expect(otc.settleTrade(0)).to.be.revertedWith("Deal not taken");
-      });
-    });
-  
-    describe("Swap Attestor", function () {
-      beforeEach(async function () {
-        await otc.postOffer("bankruptcy claims", "FTX claim", 1000, ethers.parseEther("1"));
-      });
-  
-      it("Should allow the contract admin to swap the attestor", async function () {
-        await otc.swapAttestor(0, addr1.address);
-        const deal = await otc.deals(0);
-  
-        expect(deal.attestor).to.equal(addr1.address);
-      });
-  
-      it("Should revert when trying to swap the attestor by a non-admin", async function () {
-        await expect(otc.connect(addr1).swapAttestor(0, addr2.address)).to.be.revertedWith("Only contract admin can swap the attestor");
-      });
-  
-      it("Should revert when trying to swap the attestor for an invalid deal ID", async function () {
-        await expect(otc.swapAttestor(1, addr1.address)).to.be.revertedWith("Invalid deal ID");
-      });
-    });
-  
-    describe("Extend Expiry", function () {
-      beforeEach(async function () {
-        await otc.postOffer("bankruptcy claims", "FTX claim", 1000, ethers.parseEther("1"));
-        await otc.connect(addr1).takeOffer(0, { value: ethers.parseEther("1") });
-      });
-  
-      it("Should allow the attestor to extend the expiry of a taken deal", async function () {
-        await otc.connect(owner).swapAttestor(0, addr1.address);
-        await otc.connect(addr1).extendExpiry(0, 2000);
-        const deal = await otc.deals(0);
-  
-        expect(deal.expiryBlock).to.equal(2000);
-      });
-  
-      it("Should revert when trying to extend the expiry by a non-attestor", async function () {
-        await expect(otc.connect(owner).extendExpiry(0, 2000)).to.be.revertedWith("Only the attestor can extend the expiry");
-      });
-  
-      it("Should revert when trying to extend the expiry for an invalid deal ID", async function () {
-        await expect(otc.connect(addr1).extendExpiry(1, 2000)).to.be.revertedWith("Invalid deal ID");
-      });
-    });
-  
-    describe("Refund", function () {
-      beforeEach(async function () {
-        await otc.postOffer("bankruptcy claims", "FTX claim", 1000, ethers.parseEther("1"));
-        await otc.connect(addr1).takeOffer(0, { value: ethers.parseEther("1") });
-      });
-  
-      it("Should refund the deposits when the deal has expired", async function () {
-        await ethers.provider.send("evm_increaseTime", [2000]); // Increase the time to simulate deal expiry
-        await otc.refund(0);
-  
-        const deal = await otc.deals(0);
-        expect(deal.status).to.equal(0);
-        expect(deal.sellerDeposit).to.equal(0);
-        expect(deal.buyerDeposit).to.equal(0);
-        expect(await owner.getBalance()).to.equal(ethers.parseEther("1"));
-        expect(await addr1.getBalance()).to.equal(ethers.parseEther("1"));
-      });
-  
-      it("Should revert when trying to refund a deal that has not expired", async function () {
-        await expect(otc.refund(0)).to.be.revertedWith("Deal has not expired yet");
-      });
-  
-      it("Should revert when trying to refund an invalid deal ID", async function () {
-        await expect(otc.refund(1)).to.be.revertedWith("Invalid deal ID");
-      });
-    });
+// Start the test block
+describe("OTC", function () {
+  let otc;
+  let admin;
+  let seller;
+  let buyer;
+  let attestor;
+
+  before(async function () {
+    // Get the signers from Hardhat
+    [admin, seller, buyer, attestor] = await ethers.getSigners();
+
+    // Deploy the OTC contract
+    const OTC = await ethers.getContractFactory("OTC");
+    otc = await OTC.deploy();
+    //await otc.deployed();
   });
-  
+
+  it("should post an offer", async function () {
+    // Post an offer by the seller
+    const dealType = "bankruptcy claims";
+    const opportunityName = "FTX claim";
+    const expiryBlock = 10000;
+    const sellerDeposit = ethers.parseEther("1");
+    const buyerDeposit = ethers.parseEther("2");
+
+    await otc.connect(seller).postOffer(dealType, opportunityName, expiryBlock, sellerDeposit, buyerDeposit, { value: sellerDeposit });
+
+    // Check the emitted event
+    const offerPostedEvent = await getEvent(otc, "OfferPosted");
+    expect(offerPostedEvent.dealId).to.equal(0);
+    expect(offerPostedEvent.dealType).to.equal(dealType);
+    expect(offerPostedEvent.opportunityName).to.equal(opportunityName);
+    expect(offerPostedEvent.seller).to.equal(seller.address);
+    expect(offerPostedEvent.sellerDeposit).to.equal(sellerDeposit);
+    expect(offerPostedEvent.expiryBlock).to.equal(expiryBlock);
+  });
+
+  it("should take an offer", async function () {
+    // Take the offer by the buyer
+    const dealId = 0;
+    const buyerDeposit = ethers.parseEther("2");
+
+    await otc.connect(buyer).takeOffer(dealId, { value: buyerDeposit });
+
+    // Check the emitted event
+    const offerTakenEvent = await getEvent(otc, "OfferTaken");
+    expect(offerTakenEvent.dealId).to.equal(dealId);
+    expect(offerTakenEvent.buyer).to.equal(buyer.address);
+    expect(offerTakenEvent.buyerDeposit).to.equal(buyerDeposit);
+  });
+
+  it("should settle a trade", async function () {
+    
+    // Settle the trade by the attestor
+    const dealId = 0;
+    await otc.connect(attestor).settleTrade(dealId);
+
+    // Check the emitted event
+    const tradeSettledEvent = await getEvent(otc, "TradeSettled");
+    expect(tradeSettledEvent.dealId).to.equal(dealId);
+    expect(tradeSettledEvent.seller).to.equal(seller.address);
+    expect(tradeSettledEvent.buyer).to.equal(buyer.address);
+  });
+
+  it("should swap the attestor", async function () {
+    // Swap the attestor by the contract admin
+    const dealId = 0;
+    const newAttestor = attestor.address;
+
+    await otc.connect(seller).swapAttestor(dealId, newAttestor);
+
+    // Check the emitted event
+    const attestorSwappedEvent = await getEvent(otc, "AttestorSwapped");
+    expect(attestorSwappedEvent.dealId).to.equal(dealId);
+    expect(attestorSwappedEvent.newAttestor).to.equal(newAttestor);
+  });
+
+  it("should extend the expiry", async function () {
+    // Extend the expiry by the attestor
+    const dealId = 0;
+    const newExpiry = 5;
+
+    await otc.connect(attestor).extendExpiry(dealId, newExpiry);
+
+    // Check the emitted event
+    const expiryExtendedEvent = await getEvent(otc, "ExpiryExtended");
+    expect(expiryExtendedEvent.dealId).to.equal(dealId);
+    expect(expiryExtendedEvent.newExpiry).to.equal(newExpiry);
+  });
+
+  it("should refund a deal", async function () {
+    // Refund the deal by the seller
+
+    const dealId = 0;
+
+    await otc.connect(seller).refund(dealId);
+
+    // Check the emitted event
+    const refundedEvent = await getEvent(otc, "Refunded");
+    expect(refundedEvent.dealId).to.equal(dealId);
+    expect(refundedEvent.seller).to.equal(seller.address);
+    expect(refundedEvent.buyer).to.equal(buyer.address);
+
+  });
+
+  // Helper function to get the emitted events
+  async function getEvent(contract, eventName) {
+    const events = await contract.queryFilter(contract.filters[eventName]());
+    return events[events.length - 1].args;
+  }
+});

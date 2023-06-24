@@ -35,14 +35,15 @@ contract OTC {
         admin = msg.sender;
     }
     
-    function postOffer(string memory _dealType, string memory _opportunityName, uint256 _expiryBlock, uint256 _sellerDeposit) external payable{
+    function postOffer(string memory _dealType, string memory _opportunityName, uint256 _expiryBlock, uint256 _sellerDeposit, uint256 _buyerDeposit) external payable{
         Deal memory newDeal;
-        require(msg.value >= _sellerDeposit,"Not enough eth deposited");
+        require(msg.value >= _sellerDeposit,"Not enough eth deposited from seller");
         newDeal.dealType = _dealType;
         newDeal.opportunityName = _opportunityName;
         newDeal.seller = msg.sender;
         newDeal.status = 0;
         newDeal.sellerDeposit = _sellerDeposit;
+        newDeal.buyerDeposit = _buyerDeposit;//the seller sets the price of the deal
         newDeal.expiryBlock = _expiryBlock;
 
         deals.push(newDeal);
@@ -54,6 +55,8 @@ contract OTC {
         require(_dealId < deals.length, "Invalid deal ID");
         Deal storage currentDeal = deals[_dealId];
         require(currentDeal.status == 0, "Deal not available");
+        require(msg.value >= currentDeal.buyerDeposit,"Not enough eth deposited from buyer");
+
 
         currentDeal.buyer = msg.sender;
         currentDeal.buyerDeposit = msg.value;
