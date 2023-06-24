@@ -36,20 +36,13 @@ async function main() {
 
   console.log("Deploying contracts with the account:", deployer.address);
 
-  // Compile the contract
   const Contract = await ethers.getContractFactory("OTCV2");
-  const contract = await Contract.deploy(
-    /* Pass the required constructor arguments here */
-    // Replace the placeholders with actual values
-    /* IWorldID instance */,
-    /* groupId */,
-    /* actionId */
-  );
+  const contract = await Contract.deploy();
 
   // Wait for the contract to be mined
-  await contract.deployed();
+  //await contract.deployed();
 
-  console.log("Contract deployed at address:", contract.address);
+  console.log("Contract deployed");
 }
 
 // Run the deployment script

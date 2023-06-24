@@ -52,16 +52,14 @@ contract OTCV2 {
     //for example, a world coin user can update the verified address later, which will first unverify previous address and then verify current address
 
     // @notice Sets the worldcoin verification router address and some configs
-    /// @param _worldId The WorldID instance that will verify the proofs
-    /// @param _groupId The WorldID group that contains our users (always `1`)
-    /// @param _actionId The WorldID Action ID for the proofs
+    ///  _worldId The WorldID instance that will verify the proofs
+    ///  _groupId The WorldID group that contains our users (always `1`)
+    ///  _actionId The WorldID Action ID for the proofs
     
-    constructor(IWorldID _worldId,
-        uint256 _groupId,
-        string memory _actionId) {
-        worldId = _worldId;
-        groupId = _groupId;
-        actionId = abi.encodePacked(_actionId).hashToField();
+    constructor() {
+        worldId = IWorldID(0x719683F13Eeea7D84fCBa5d7d17Bf82e03E3d260);
+        groupId = 1;
+        actionId = abi.encodePacked("registeruser").hashToField();
         admin = msg.sender;
     }
     
