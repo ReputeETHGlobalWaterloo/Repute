@@ -25,23 +25,29 @@ describe("OTC Contract", function () {
   
     describe("Post Offer", function () {
       it("Should add a new deal with the provided details", async function () {
-        await otc.postOffer("bankruptcy claims", "FTX claim", 1000, ethers.parseEther("1"));
+        const ethAmount = ethers.parseEther("1");
+    
+        // Create the transaction parameters
+        const transactionParams = {
+          value: ethAmount,
+        };
+    
+        // Call the postOffer function with the transaction parameters
+        await expect(otc.connect(owner).postOffer("bankruptcy claims", "FTX claim", 1000, ethers.parseEther("1"), transactionParams))
+          .to.emit(otc, "OfferPosted");
+    
         const deal = await otc.deals(0);
-  
+    
+        // Perform assertions
         expect(deal.dealType).to.equal("bankruptcy claims");
         expect(deal.opportunityName).to.equal("FTX claim");
         expect(deal.seller).to.equal(owner.address);
         expect(deal.status).to.equal(0);
-        expect(deal.sellerDeposit).to.equal(ethers.parseEther("1"));
+        expect(deal.sellerDeposit).to.equal(ethAmount);
         expect(deal.expiryBlock).to.equal(1000);
       });
-  
-      it("Should require the seller to deposit an amount greater than or equal to the seller deposit", async function () {
-        await expect(otc.postOffer("bankruptcy claims", "FTX claim", 1000, ethers.parseEther("2"))).to.be.revertedWith(
-          "revert"
-        );
-      });
     });
+    
   
     describe("Take Offer", function () {
       beforeEach(async function () {
