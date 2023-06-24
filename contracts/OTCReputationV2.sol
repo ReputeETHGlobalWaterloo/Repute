@@ -8,8 +8,8 @@ contract OTC {
         address buyer;
         address attestor; // assigned attestor. each attestor might have specializations in i.e. claims
         // attestor can be swapped by contract admin, if attestor can no longer serve the duty
-        uint256 sellerDeposit; // in USDC, amount deposited by seller, which is the collateral amount
-        uint256 buyerDeposit; // in USDC, amount deposited by buyer, which is the total payment amount
+        uint256 sellerDeposit; // in ETH, amount deposited by seller, which is the collateral amount
+        uint256 buyerDeposit; // in ETH, amount deposited by buyer, which is the total payment amount
         uint256 status; // 0: available, 1: taken, 2: settled
         // deal is created, seller deposits, status = 0
         // buyer is interested, buyer deposits, status = 1
