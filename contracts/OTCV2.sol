@@ -4,7 +4,7 @@ import { ByteHasher } from "./helpers/ByteHasher.sol";
 import { IWorldID } from "./interfaces/IWorldID.sol";
 
 
-contract OTC {
+contract OTCV2 {
     using ByteHasher for bytes;
     struct Deal {
         string dealType; // bankruptcy claims, saft, safe, vesting tokens, airdrop
