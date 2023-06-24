@@ -36,4 +36,5 @@ we require attestor to oversee that Alice has actually delivered the claims to B
 the smart contract can release the funds.
 
 The OTC deal does not only include the trading of bankruptcy claims. It could also expand to
-trading airdrop farming addresses, where the airdrop token is not yet claimable.
+trading airdrop farming addresses, where the airdrop token is not yet claimable. The platform can
+also faciliate secondary trading of SAFT/SAFE agreements, or unvested tokens from VCs.
